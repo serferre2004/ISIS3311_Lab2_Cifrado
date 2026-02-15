@@ -6,8 +6,8 @@ from base64 import urlsafe_b64encode, urlsafe_b64decode
 from ftplib import FTP
 
 # Funciones criptográficas
-def derive_key(password: str) -> bytes:
-    salt = os.urandom(16)
+def derive_key(password: str, salt = None) -> bytes:
+    salt = os.urandom(16) if salt is None else salt
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -28,13 +28,7 @@ def decrypt(ciphertext: str, password: str) -> str:
     try:
         decoded = urlsafe_b64decode(ciphertext.encode())
         salt, iv, ct = decoded[:16], decoded[16:28], decoded[28:]
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-        )
-        key = kdf.derive(password.encode())
+        key, _ = derive_key(password, salt)
         aesgcm = AESGCM(key) #Lanza excepción si la contraseña es incorrecta
         return aesgcm.decrypt(iv, ct, None).decode()
     except Exception as e:
@@ -103,3 +97,6 @@ def main():
             return
         else:
             print("Opción no válida. Por favor, ingrese U para subir o D para descargar.")
+
+if __name__ == "__main__":
+    main()
